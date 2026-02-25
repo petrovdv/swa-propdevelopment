@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-secure-2
+  namespace: audit-zone
+spec:
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: nginx
+      image: nginx
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        capabilities:
+          drop: ["ALL"]
+        seccompProfile:
+          type: RuntimeDefault
+        readOnlyRootFilesystem: true
+      volumeMounts:
+        - name: temp-data
+          mountPath: /host-data
+          readOnly: true
+  volumes:
+    - name: temp-data
+      emptyDir: {}
