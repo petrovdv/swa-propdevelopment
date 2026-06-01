@@ -1,0 +1,26 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8sreadonlyrootfsandnohostpaths
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sReadOnlyRootFSAndNoHostPaths
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sreadonlyrootfsandnohostpaths
+
+        violation[{"msg": msg}] {
+            # Check each container individually
+            c := input.review.object.spec.containers[_]
+            not c.securityContext.readOnlyRootFilesystem
+            msg := sprintf("%v/%v must set securityContext.readOnlyRootFilesystem=true.", [input.review.object.metadata.namespace, input.review.object.metadata.name])
+        }
+
+        violation[{"msg": msg}] {
+            # Disallow hostPath volumes
+            input.review.object.spec.volumes[_].hostPath != null
+            msg := sprintf("%v/%v uses forbidden HostPath volume.", [input.review.object.metadata.namespace, input.review.object.metadata.name])
+        }
